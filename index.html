@@ -1,0 +1,504 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0d1117">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Lazav">
+<title>Lazav</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+  :root {
+    --bg: #0d1117;
+    --panel: #171d26;
+    --line: #2a3340;
+    --text: #e6e9ee;
+    --muted: #8b95a3;
+    --accent: #4f8fd6;
+    --controls-h: 190px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    overscroll-behavior: none;
+    touch-action: manipulation;
+  }
+  button { font: inherit; color: inherit; cursor: pointer; }
+
+  #app {
+    height: 100dvh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: calc(env(safe-area-inset-top) + 10px) 12px calc(env(safe-area-inset-bottom) + 10px);
+    gap: 10px;
+  }
+  #stage {
+    flex: 1;
+    min-height: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* ---------- Card ---------- */
+  .card {
+    --frame: #c9a84f;
+    --bar: #efe3bd;
+    --box: #f4eeda;
+    container-type: inline-size;
+    width: min(100%, calc((100dvh - var(--controls-h) - 40px) * 63 / 88));
+    aspect-ratio: 63 / 88;
+    background: #111;
+    border-radius: 4.6cqw;
+    padding: 3.6cqw 3.6cqw 5.5cqw;
+    position: relative;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, .6);
+    color: #111;
+  }
+  .frame {
+    height: 100%;
+    background: var(--frame);
+    background-image: linear-gradient(160deg, rgba(255,255,255,.22), rgba(0,0,0,.18));
+    border-radius: 2cqw 2cqw 4cqw 4cqw;
+    padding: 1.8cqw 2.2cqw 3cqw;
+    display: flex;
+    flex-direction: column;
+  }
+  .bar {
+    background: var(--bar);
+    border: .5cqw solid rgba(0, 0, 0, .65);
+    border-radius: 2.4cqw / 50%;
+    height: 8.4cqw;
+    padding: 0 2.2cqw;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.5cqw;
+    font-family: Georgia, "Times New Roman", serif;
+    font-weight: 700;
+    white-space: nowrap;
+    box-shadow: 0 .4cqw .6cqw rgba(0, 0, 0, .35);
+    position: relative;
+    z-index: 1;
+  }
+  .name { font-size: 5cqw; overflow: hidden; text-overflow: ellipsis; }
+  .cost { display: flex; gap: .5cqw; flex: none; }
+  .cost img { width: 4.6cqw; height: 4.6cqw; border-radius: 50%; box-shadow: -.2cqw .4cqw 0 rgba(0,0,0,.7); }
+  .type { font-size: 4.1cqw; overflow: hidden; text-overflow: ellipsis; }
+  .art {
+    margin: 0 1.4cqw;
+    aspect-ratio: 626 / 457;
+    background: #222;
+    border: .5cqw solid rgba(0, 0, 0, .65);
+    border-top: 0; border-bottom: 0;
+    overflow: hidden;
+  }
+  .art img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .textbox {
+    flex: 1;
+    min-height: 0;
+    margin: 0 1.4cqw;
+    background: var(--box);
+    border: .5cqw solid rgba(0, 0, 0, .65);
+    border-top: 0;
+    padding: 1.6cqw 2.4cqw 3cqw;
+    overflow: hidden;
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1.22;
+  }
+  .rules p { margin: 0 0 .45em; }
+  .rules p.added { color: #1a2f6b; }
+  .rules img { height: .95em; width: .95em; vertical-align: -.12em; }
+  .pt {
+    position: absolute;
+    right: 5cqw;
+    bottom: 3.4cqw;
+    min-width: 17cqw;
+    height: 8.4cqw;
+    padding: 0 2.5cqw;
+    background: var(--bar);
+    border: .6cqw solid rgba(0, 0, 0, .75);
+    border-radius: 2.4cqw / 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font: 700 5.6cqw Georgia, "Times New Roman", serif;
+    box-shadow: 0 .4cqw .8cqw rgba(0, 0, 0, .5);
+  }
+  .pt.boosted { color: #0b6b2a; }
+  .pt.shrunk { color: #a01818; }
+  .copying {
+    position: absolute;
+    left: 5.5cqw;
+    bottom: 1.2cqw;
+    right: 30cqw;
+    font-size: 2.6cqw;
+    color: #c9ced6;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .card[data-frame="W"] { --frame: #d9d3bd; --bar: #f6f3e6; --box: #f8f6ee; }
+  .card[data-frame="U"] { --frame: #2f7fc0; --bar: #cfe2f2; --box: #e3eef7; }
+  .card[data-frame="B"] { --frame: #3a3636; --bar: #cdc7c3; --box: #dedad6; }
+  .card[data-frame="R"] { --frame: #c8452e; --bar: #f3d3c6; --box: #f6e4dc; }
+  .card[data-frame="G"] { --frame: #3f8a56; --bar: #d0e3d2; --box: #e2ede2; }
+  .card[data-frame="M"] { --frame: #c9a84f; --bar: #efe3bd; --box: #f4eeda; }
+  .card[data-frame="A"] { --frame: #8f9ba6; --bar: #dbe2e8; --box: #e8edf1; }
+  .card[data-frame="C"] { --frame: #b4b7bb; --bar: #e4e5e7; --box: #eeeff0; }
+
+  /* ---------- Controls ---------- */
+  #controls {
+    width: 100%;
+    max-width: 460px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .row { display: flex; gap: 8px; align-items: stretch; }
+  .btn {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 12px 10px;
+    font-size: 15px;
+  }
+  .btn:active { filter: brightness(1.3); }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; font-size: 17px; padding: 14px; }
+  .tally {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-width: 0;
+  }
+  .tally button {
+    background: none; border: 0;
+    width: 32px; height: 44px;
+    font-size: 22px; line-height: 1;
+    color: var(--muted);
+    flex: none;
+  }
+  .tally .mid { text-align: center; min-width: 0; }
+  .tally .val { font-size: 18px; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .tally .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+
+  /* ---------- Search ---------- */
+  #search {
+    position: fixed; inset: 0;
+    background: var(--bg);
+    display: none;
+    flex-direction: column;
+    padding: calc(env(safe-area-inset-top) + 10px) 12px 0;
+    z-index: 10;
+  }
+  #search.open { display: flex; }
+  .searchbar { display: flex; gap: 8px; }
+  #q {
+    flex: 1; min-width: 0;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 13px 14px;
+    font-size: 17px;
+    color: var(--text);
+    outline: none;
+  }
+  #q:focus { border-color: var(--accent); }
+  #cancel { flex: none; padding: 0 14px; }
+  #status { color: var(--muted); font-size: 14px; padding: 12px 4px 4px; }
+  #results {
+    list-style: none; margin: 6px 0 0; padding: 0 0 calc(env(safe-area-inset-bottom) + 12px);
+    overflow-y: auto; flex: 1;
+  }
+  #results li {
+    display: flex; gap: 10px; align-items: center;
+    padding: 8px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+  #results li:active { background: var(--panel); }
+  #results img.thumb { width: 64px; height: 47px; object-fit: cover; border-radius: 6px; background: var(--panel); flex: none; }
+  #results .info { min-width: 0; flex: 1; }
+  #results .rname { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #results .rtype { font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  #results .rpt { flex: none; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--muted); }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <div class="card" id="card">
+      <div class="frame">
+        <div class="bar"><span class="name" id="name"></span><span class="cost" id="cost"></span></div>
+        <div class="art"><img id="art" alt=""></div>
+        <div class="bar"><span class="type" id="type"></span></div>
+        <div class="textbox" id="textbox"><div class="rules" id="rules"></div></div>
+      </div>
+      <div class="pt" id="pt"></div>
+      <div class="copying" id="copying"></div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button class="btn primary" id="copyBtn">Copy a creature</button>
+    <div class="row">
+      <div class="tally" data-key="counters">
+        <button data-d="-1" aria-label="Remove counter">&minus;</button>
+        <div class="mid"><div class="val"></div><div class="lbl">+1/+1 counters</div></div>
+        <button data-d="1" aria-label="Add counter">+</button>
+      </div>
+      <button class="btn" id="resetBtn" style="flex:none">Reset to Lazav</button>
+    </div>
+    <div class="row">
+      <div class="tally" data-key="dmg0">
+        <button data-d="-1">&minus;</button>
+        <div class="mid"><div class="val"></div><div class="lbl">Cmdr dmg 1</div></div>
+        <button data-d="1">+</button>
+      </div>
+      <div class="tally" data-key="dmg1">
+        <button data-d="-1">&minus;</button>
+        <div class="mid"><div class="val"></div><div class="lbl">Cmdr dmg 2</div></div>
+        <button data-d="1">+</button>
+      </div>
+      <div class="tally" data-key="dmg2">
+        <button data-d="-1">&minus;</button>
+        <div class="mid"><div class="val"></div><div class="lbl">Cmdr dmg 3</div></div>
+        <button data-d="1">+</button>
+      </div>
+    </div>
+    <button class="btn" id="newGameBtn">New game</button>
+  </div>
+</div>
+
+<div id="search">
+  <div class="searchbar">
+    <input id="q" type="search" placeholder="Creature name" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+    <button class="btn" id="cancel">Cancel</button>
+  </div>
+  <div id="status">Type at least 2 letters.</div>
+  <ul id="results"></ul>
+</div>
+
+<script>
+const API = 'https://api.scryfall.com';
+const SYMBOLS = 'https://svgs.scryfall.io/card-symbols/';
+const STORE = 'lazav-state-v1';
+const ART_STORE = 'lazav-art-v1';
+
+const LAZAV_ABILITY = "Whenever a creature card is put into an opponent's graveyard from anywhere, you may have Lazav become a copy of that card, except its name is Lazav, Dimir Mastermind, it's legendary in addition to its other types, and it has hexproof and this ability.";
+const LAZAV = {
+  name: 'Lazav, Dimir Mastermind',
+  manaCost: '{U}{U}{B}{B}',
+  typeLine: 'Legendary Creature — Shapeshifter',
+  text: '',
+  power: '3',
+  toughness: '3',
+  colors: ['U', 'B'],
+  art: localStorage.getItem(ART_STORE) || ''
+};
+
+const $ = id => document.getElementById(id);
+let state = load();
+
+function load() {
+  const fresh = { copy: null, counters: 0, dmg0: 0, dmg1: 0, dmg2: 0 };
+  try { return Object.assign(fresh, JSON.parse(localStorage.getItem(STORE))); }
+  catch { return fresh; }
+}
+function save() { localStorage.setItem(STORE, JSON.stringify(state)); }
+
+/* ---------- Scryfall → the copiable values we need ---------- */
+function simplify(c) {
+  // Double-faced and split layouts: a card in a graveyard has only its front face's characteristics.
+  const f = c.card_faces && c.card_faces[0];
+  const pick = k => (c[k] !== undefined ? c[k] : f ? f[k] : undefined);
+  const img = c.image_uris || (f && f.image_uris) || {};
+  return {
+    name: f ? f.name : c.name,
+    manaCost: pick('mana_cost') || '',
+    typeLine: f ? f.type_line : c.type_line,
+    text: pick('oracle_text') || '',
+    power: pick('power'),
+    toughness: pick('toughness'),
+    colors: (f && f.colors) || c.colors || [],
+    art: img.art_crop || ''
+  };
+}
+
+/* ---------- Rendering ---------- */
+function esc(s) {
+  return s.replace(/[&<>"]/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]));
+}
+function symbols(s) {
+  return s.replace(/\{([^}]+)\}/g, (m, code) =>
+    `<img src="${SYMBOLS}${encodeURIComponent(code.replace(/\//g, ''))}.svg" alt="${m}">`);
+}
+function ruleHtml(line) {
+  return symbols(esc(line)).replace(/\([^)]*\)/g, '<i>$&</i>');
+}
+function frameOf(card) {
+  if (card.colors.length > 1) return 'M';
+  if (card.colors.length === 1) return card.colors[0];
+  return /\bArtifact\b/.test(card.typeLine) ? 'A' : 'C';
+}
+function plus(v, n) {
+  if (!n) return v;
+  return /^-?\d+$/.test(v) ? String(Number(v) + n) : v + (n > 0 ? '+' : '') + n;
+}
+
+function render() {
+  const src = state.copy || LAZAV;
+
+  $('card').dataset.frame = frameOf(src);
+  $('name').textContent = LAZAV.name;
+  $('cost').innerHTML = symbols(esc(src.manaCost));
+  $('type').textContent = /\bLegendary\b/.test(src.typeLine) ? src.typeLine : 'Legendary ' + src.typeLine;
+  $('art').src = src.art || LAZAV.art || '';
+
+  const own = src.text ? src.text.split('\n') : [];
+  const hasHexproof = own.some(l => /^hexproof(\s*\(|$)/i.test(l.trim()));
+  let html = '';
+  if (!hasHexproof) html += `<p class="${state.copy ? 'added' : ''}">Hexproof</p>`;
+  html += own.map(l => `<p>${ruleHtml(l)}</p>`).join('');
+  html += `<p class="${state.copy ? 'added' : ''}">${ruleHtml(LAZAV_ABILITY)}</p>`;
+  $('rules').innerHTML = html;
+
+  const pt = $('pt');
+  pt.textContent = plus(src.power ?? '0', state.counters) + '/' + plus(src.toughness ?? '0', state.counters);
+  pt.classList.toggle('boosted', state.counters > 0);
+  pt.classList.toggle('shrunk', state.counters < 0);
+
+  $('copying').textContent = state.copy ? 'Copying: ' + state.copy.name : '';
+
+  document.querySelectorAll('.tally').forEach(t => {
+    const v = state[t.dataset.key];
+    t.querySelector('.val').textContent = t.dataset.key === 'counters' && v > 0 ? '+' + v : v;
+  });
+
+  fitRules();
+}
+
+// Shrink rules text until the whole thing fits the text box.
+function fitRules() {
+  const box = $('textbox'), rules = $('rules');
+  const w = $('card').clientWidth;
+  if (!w) return;
+  const cs = getComputedStyle(box);
+  const room = box.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+  for (let f = 0.043; f >= 0.016; f -= 0.001) {
+    rules.style.fontSize = (w * f) + 'px';
+    if (rules.scrollHeight <= room) break;
+  }
+}
+new ResizeObserver(fitRules).observe($('card'));
+
+/* ---------- Controls ---------- */
+document.querySelectorAll('.tally button').forEach(b => {
+  b.addEventListener('click', () => {
+    const key = b.parentElement.dataset.key;
+    let v = state[key] + Number(b.dataset.d);
+    if (key !== 'counters') v = Math.max(0, v);
+    state[key] = v;
+    save(); render();
+  });
+});
+// Lazav left the battlefield: he's himself again and his counters are gone.
+$('resetBtn').addEventListener('click', () => {
+  state.copy = null; state.counters = 0;
+  save(); render();
+});
+$('newGameBtn').addEventListener('click', () => {
+  if (!confirm('Start a new game? This clears the copy, counters and commander damage.')) return;
+  state = { copy: null, counters: 0, dmg0: 0, dmg1: 0, dmg2: 0 };
+  save(); render();
+});
+
+/* ---------- Search ---------- */
+let timer = 0, seq = 0;
+function openSearch() {
+  $('search').classList.add('open');
+  $('q').value = '';
+  $('results').innerHTML = '';
+  $('status').textContent = 'Type at least 2 letters.';
+  $('q').focus();
+}
+function closeSearch() {
+  $('search').classList.remove('open');
+  $('q').blur();
+}
+$('copyBtn').addEventListener('click', openSearch);
+$('cancel').addEventListener('click', closeSearch);
+$('q').addEventListener('input', () => {
+  clearTimeout(timer);
+  timer = setTimeout(runSearch, 300);
+});
+
+async function runSearch() {
+  const q = $('q').value.trim();
+  const mine = ++seq;
+  if (q.length < 2) {
+    $('results').innerHTML = '';
+    $('status').textContent = 'Type at least 2 letters.';
+    return;
+  }
+  $('status').textContent = 'Searching…';
+  const query = q.split(/\s+/).map(w => 'name:' + w.replace(/"/g, '')).join(' ') + ' t:creature game:paper';
+  let cards = [];
+  try {
+    const r = await fetch(`${API}/cards/search?order=edhrec&q=${encodeURIComponent(query)}`);
+    if (mine !== seq) return;
+    if (r.ok) cards = (await r.json()).data;
+    else if (r.status !== 404) throw new Error(r.status);
+  } catch {
+    if (mine !== seq) return;
+    $('results').innerHTML = '';
+    $('status').textContent = 'Search failed. Check your connection.';
+    return;
+  }
+  if (mine !== seq) return;
+
+  // t:creature also matches cards whose back face is the creature; those aren't creature cards in a graveyard.
+  const found = cards.map(simplify).filter(c => /\bCreature\b/.test(c.typeLine)).slice(0, 40);
+  $('status').textContent = found.length ? '' : 'No creature cards found.';
+  const list = $('results');
+  list.innerHTML = '';
+  for (const c of found) {
+    const li = document.createElement('li');
+    li.innerHTML = `<img class="thumb" loading="lazy" src="${esc(c.art)}" alt="">
+      <div class="info"><div class="rname">${esc(c.name)}</div><div class="rtype">${esc(c.typeLine)}</div></div>
+      <div class="rpt">${esc((c.power ?? '') + '/' + (c.toughness ?? ''))}</div>`;
+    li.addEventListener('click', () => {
+      state.copy = c;
+      save(); render(); closeSearch();
+    });
+    list.appendChild(li);
+  }
+}
+
+/* ---------- Boot ---------- */
+render();
+if (!LAZAV.art) {
+  fetch(`${API}/cards/gtc/174`).then(r => r.json()).then(c => {
+    LAZAV.art = c.image_uris.art_crop;
+    localStorage.setItem(ART_STORE, LAZAV.art);
+    render();
+  }).catch(() => {});
+}
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>
